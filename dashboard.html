@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Báo Cáo TPM - Bitis</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }
+        .main-nav { background-color: #333; padding: 1rem 2rem; text-align: center; border-radius: 0 0 8px 8px; }
+        .main-nav a { color: white; text-decoration: none; font-weight: 600; font-size: 1.1rem; margin: 0 1.5rem; }
+        .main-nav a:hover { opacity: 0.8; }
+        
+        .dashboard-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; color: #222; margin-top: 0; margin-bottom: 2rem; }
+        .loading { text-align: center; font-size: 1.5rem; color: #555; padding: 4rem 0; }
+        
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .kpi-card { background-color: #ffffff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); text-align: center; }
+        .kpi-card h3 { margin: 0 0 0.5rem 0; color: #555; font-size: 1.1rem; }
+        .kpi-card .value { font-size: 2.5rem; font-weight: 700; color: #007bff; }
+        .kpi-card .unit { font-size: 1rem; color: #666; margin-left: 0.25rem; }
+
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .chart-card { background-color: #ffffff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .chart-card h3 { margin-top: 0; text-align: center; color: #333; }
+
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .dashboard-container { padding: 1rem; } .summary-grid { grid-template-columns: 1fr; } .main-nav a { margin: 0 0.5rem; font-size: 1rem; } }
+    </style>
+</head>
+<body>
+
+    <nav class="main-nav">
+        <a href="index.html">Nhập Báo Cáo Mới</a>
+        <a href="dashboard.html">Xem Dashboard Tổng Quan</a>
+    </Nave>
+
+    <div class="dashboard-container">
+        <h1>Dashboard Tổng Quan TPM</h1>
+
+        <div id="loadingMessage" class="loading">Đang tải dữ liệu...</div>
+
+        <div id="dashboardContent" style="display:none;">
+            <section class="summary-grid">
+                <div class="kpi-card">
+                    <h3>MTTR (Giả lập)</h3>
+                    <span class="value" id="kpi-mttr">--</span>
+                    <span class="unit">phút</span>
+                </div>
+                <div class="kpi-card">
+                    <h3>MTBF (Giả lập)</h3>
+                    <span class="value" id="kpi-mtbf">--</span>
+                    <span class="unit">giờ</span>
+                </div>
+                <div class="kpi-card">
+                    <h3>Downtime (Giả lập)</h3>
+                    <span class="value" id="kpi-downtime">--</span>
+                    <span class="unit">giờ</span>
+                </div>
+            </section>
+
+            <section class="charts-grid">
+                <div class="chart-card">
+                    <h3>Số phiếu ghi nhận (Theo khu vực)</h3>
+                    <canvas id="chart1"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Downtime (Theo khu vực) (Giả lập)</h3>
+                    <canvas id="chart2"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Số phiếu xử lý (Theo bảo trì)</h3>
+                    <canvas id="chart3"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>T/g phản hồi (Theo bảo trì) (Giả lập)</h3>
+                    <canvas id="chart4"></canvas>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // === BƯỚC QUAN TRỌNG ===
+        // Dán CÙNG MỘT URL Web App của bạn vào đây
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykRkSxU2WAw_O4rFWY_HZXcE9UAjot1NXARgIIbaexOiFvxLLRncGu76G4czn54t-_/exec';
+
+        const charts = {}; // Lưu trữ biểu đồ để cập nhật
+
+        // Hàm chung để tạo/cập nhật biểu đồ cột
+        const createBarChart = (canvasId, title, labels, data) => {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            if (charts[canvasId]) {
+                charts[canvasId].destroy(); // Hủy biểu đồ cũ nếu tồn tại
+            }
+            
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: title,
+                        data: data,
+                        backgroundColor: 'rgba(0, 123, 255, 0.6)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        };
+
+        // Hàm chính để tải dữ liệu
+        function loadDashboardData() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            const dashboardContent = document.getElementById('dashboardContent');
+
+            fetch(GOOGLE_SCRIPT_URL) // Gọi GET đến Apps Script
+                .then(res => res.json())
+                .then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message);
+                    }
+                    
+                    const apiData = response.data;
+
+                    // BƯỚC 1: CẬP NHẬT CÁC KPI (Dùng dữ liệu giả lập từ API)
+                    document.getElementById('kpi-mttr').textContent = apiData.summary.mttr;
+                    document.getElementById('kpi-mtbf').textContent = apiData.summary.mtbf;
+                    document.getElementById('kpi-downtime').textContent = apiData.summary.downtime;
+
+                    // BƯỚC 2: VẼ CÁC BIỂU ĐỒ
+                    // Biểu đồ thật
+                    createBarChart('chart1', 'Số phiếu', apiData.ticketsByArea.labels, apiData.ticketsByArea.data);
+                    // Biểu đồ giả lập
+                    createBarChart('chart2', 'Downtime (giờ)', apiData.downtimeByArea.labels, apiData.downtimeByArea.data);
+                    // Biểu đồ thật
+                    createBarChart('chart3', 'Số phiếu xử lý', apiData.ticketsByStaff.labels, apiData.ticketsByStaff.data);
+                    // Biểu đồ giả lập
+                    createBarChart('chart4', 'T/g phản hồi (phút)', apiData.responseTimeByStaff.labels, apiData.responseTimeByStaff.data);
+
+                    // Ẩn "Đang tải" và hiển thị nội dung
+                    loadingMessage.style.display = 'none';
+                    dashboardContent.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error("Lỗi khi tải dashboard:", error);
+                    loadingMessage.textContent = `Lỗi: Không thể tải dữ liệu. ${error.message}`;
+                    loadingMessage.style.color = 'red';
+                });
+        }
+
+        // Chạy hàm khi trang được tải
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>

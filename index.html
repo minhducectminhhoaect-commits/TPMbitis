@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Sự Cố TPM - Bitis</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }
+        .main-nav { background-color: #333; padding: 1rem 2rem; text-align: center; border-radius: 0 0 8px 8px; }
+        .main-nav a { color: white; text-decoration: none; font-weight: 600; font-size: 1.1rem; margin: 0 1.5rem; }
+        .main-nav a:hover { opacity: 0.8; }
+        .tpm-form-container { max-width: 800px; margin: 2rem auto; padding: 2.5rem; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        h1 { text-align: center; color: #222; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; }
+        
+        input[type="text"], input[type="datetime-local"], textarea, select {
+            width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 5px;
+            box-sizing: border-box; font-size: 1rem; -webkit-appearance: none; 
+            appearance: none; background-color: #fff;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: #007bff; outline: none; box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        .time-fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .submit-button { display: block; width: 100%; padding: 1rem; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .submit-button:hover { background-color: #0056b3; }
+        .submit-button:disabled { background-color: #ccc; }
+        #formStatus { text-align: center; margin-top: 1rem; font-weight: 600; }
+        @media (max-width: 600px) { .time-fields-grid { grid-template-columns: 1fr; } .tpm-form-container { padding: 1.5rem; margin: 1rem; } .main-nav a { margin: 0 0.5rem; font-size: 1rem; } }
+    </style>
+</head>
+<body>
+
+    <nav class="main-nav">
+        <a href="index.html">Nhập Báo Cáo Mới</a>
+        <a href="dashboard.html">Xem Dashboard Tổng Quan</a>
+    </nav>
+
+    <div class="tpm-form-container">
+        <h1>Báo Cáo Bảo Trì TPM</h1>
+
+        <form id="tpmReportForm">
+            <div class="form-group">
+                <label for="asset-id">Mã số tài sản:</label>
+                <input type="text" id="asset-id" name="ma_so_tai_san" required>
+            </div>
+
+            <div class="form-group">
+                <label for="line">Chuyền:</label>
+                <select id="line" name="chuyen" required>
+                    <option value="">-- Vui lòng chọn chuyền --</option>
+                    <option value="Hoàn chỉnh 1">Hoàn chỉnh 1</option>
+                    <option value="Hoàn chỉnh 2">Hoàn chỉnh 2</option>
+                    <option value="May 1">May 1</option>
+                    <option value="May 2">May 2</option>
+                    <option value="May 3">May 3</option>
+                    <option value="May 4">May 4</option>
+                    <option value="May 5">May 5</option>
+                    <option value="May 6">May 6</option>
+                    <option value="Dập 1">Dập 1</option>
+                    <option value="Dập 2">Dập 2</option>
+                    <option value="In lụa">In lụa</option>
+                    <option value="Bể hình">Bể hình</option>
+                    <option value="Cán dán">Cán dán</option>
+                    <option value="Cắt trục">Cắt trục</option>
+                    <option value="Ép dấu chân">Ép dấu chân</option>
+                    <option value="Chuẩn bị đế">Chuẩn bị đế</option>
+                    <option value="Bọc đế">Bọc đế</option>
+                    <option value="Bán thành phẩm">Bán thành phẩm</option>
+                    <option value="Cắt nhiệt">Cắt nhiệt</option>
+                    <option value="Phát sinh">Phát sinh</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="error-description">Lỗi:</label>
+                <textarea id="error-description" name="loi" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="solution">Biện pháp:</label>
+                <textarea id="solution" name="bien_phap" rows="3"></textarea>
+            </div>
+            
+            <div class="time-fields-grid">
+                <div class="form-group"><label for="time-breakdown">Thời điểm máy hư:</label><input type="datetime-local" id="time-breakdown" name="thoi_diem_may_hu" required></div>
+                <div class="form-group"><label for="time-maintenance-start">Thời điểm bảo trì đến:</label><input type="datetime-local" id="time-maintenance-start" name="thoi_diem_bao_tri_den" required></div>
+                <div class="form-group"><label for="time-resume-production">Thời điểm sản xuất lại:</label><input type="datetime-local" id="time-resume-production" name="thoi_diem_san_xuat_lai"></div>
+                <div class="form-group"><label for="time-repair-complete">Thời điểm hoàn tất sửa chữa:</label><input type="datetime-local" id="time-repair-complete" name="thoi_diem_hoan_tat_sua_chua"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="maintenance-name">Tên bảo trì:</label>
+                <select id="maintenance-name" name="ten_bao_tri" required>
+                    <option value="">-- Vui lòng chọn tên --</option>
+                    <option value="Hoàng Đức Thuần">Hoàng Đức Thuần</option>
+                    <option value="Bùi Thanh Hoàng">Bùi Thanh Hoàng</option>
+                    <option value="Nguyễn Tuấn Khanh">Nguyễn Tuấn Khanh</option>
+                    <option value="Nguyễn Văn Khanh">Nguyễn Văn Khanh</option>
+                    <option value="Nguyễn Nhất Đẳng">Nguyễn Nhất Đẳng</option>
+                    <option value="Phan Văn Hồ">Phan Văn Hồ</option>
+                    <option value="Phạm Đắc Thụy">Phạm Đắc Thụy</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Ghi chú:</label>
+                <textarea id="notes" name="ghi_chu" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="submit-button" id="submitButton">Gửi Báo Cáo</button>
+            <p id="formStatus"></p>
+        </form>
+    </div>
+
+    <script>
+        // === BƯỚC QUAN TRỌNG ===
+        // Dán URL Web App của bạn (từ Giai đoạn 3) vào đây
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykRkSxU2WAw_O4rFWY_HZXcE9UAjot1NXARgIIbaexOiFvxLLRncGu76G4czn54t-_/exec';
+
+        const form = document.getElementById('tpmReportForm');
+        const submitButton = document.getElementById('submitButton');
+        const formStatus = document.getElementById('formStatus');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Đang gửi...';
+            formStatus.textContent = '';
+
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => { data[key] = value; });
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                redirect: 'follow', 
+                body: JSON.stringify(data), 
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.status === 'success') {
+                    formStatus.textContent = 'Gửi báo cáo thành công!';
+                    formStatus.style.color = 'green';
+                    form.reset(); 
+                } else {
+                    throw new Error(response.message);
+                }
+            })
+            .catch(error => {
+                formStatus.textContent = `Lỗi: ${error.message}`;
+                formStatus.style.color = 'red';
+            })
+            .finally(() => {
+                submitButton.disabled = false; 
+                submitButton.textContent = 'Gửi Báo Cáo';
+            });
+        });
+    </script>
+</body>
+</html>
