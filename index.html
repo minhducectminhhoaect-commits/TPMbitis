@@ -168,12 +168,12 @@
                 </select>
             </div>
             <div class="filter-group">
-                <input type="date" id="d-start" title="Từ ngày">
-                <input type="date" id="d-end" title="Đến ngày">
+                <input type="date" id="d-start" title="Từ ngày" placeholder="Từ ngày">
+                <input type="date" id="d-end" title="Đến ngày" placeholder="Đến ngày">
             </div>
             <div class="filter-group">
                 <button onclick="loadDashboardData()">Lọc Dữ Liệu</button>
-                <button class="secondary" onclick="resetFilters()">Reset</button>
+                <button class="secondary" onclick="resetFilters()">Reset (Xem Tất Cả)</button>
             </div>
         </div>
 
@@ -191,7 +191,7 @@
 
     <script>
         // ==============================================
-        // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
+        // QUAN TRỌNG: THAY URL WEB APP CỦA BẠN VÀO ĐÂY
         const API_URL = 'https://script.google.com/macros/s/AKfycbykRkSxU2WAw_O4rFWY_HZXcE9UAjot1NXARgIIbaexOiFvxLLRncGu76G4czn54t-_/exec'; 
         // ==============================================
 
@@ -355,20 +355,18 @@
         // --- DASHBOARD ---
         let charts = {};
         
-        // Hàm Reset
+        // HÀM RESET: Xóa bộ lọc và tải lại toàn bộ
         function resetFilters() {
             document.getElementById('d-vsm').value = 'all';
             document.getElementById('d-line').value = 'all';
-            // Set ngày về đầu tháng - hôm nay
-            const today = new Date();
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            document.getElementById('d-start').valueAsDate = firstDay;
-            document.getElementById('d-end').valueAsDate = today;
+            document.getElementById('d-start').value = '';
+            document.getElementById('d-end').value = '';
             loadDashboardData();
         }
 
         function showDashboard(isLoggedIn) {
             showScreen('screen-dashboard');
+            // Mặc định nếu chưa có ngày thì reset để hiện tất cả
             if(!document.getElementById('d-start').value) resetFilters();
             else loadDashboardData();
         }
@@ -378,14 +376,20 @@
                 const raw = res.data;
                 const vsmVal = document.getElementById('d-vsm').value;
                 const lineVal = document.getElementById('d-line').value;
-                const start = new Date(document.getElementById('d-start').value);
-                const end = new Date(document.getElementById('d-end').value); end.setHours(23,59);
+                
+                // Lấy giá trị ngày (có thể rỗng)
+                const startInput = document.getElementById('d-start').value;
+                const endInput = document.getElementById('d-end').value;
 
                 // FILTER LOGIC
                 const filtered = raw.filter(i => {
-                    // 1. Filter Date
-                    const d = i.gio_hu ? new Date(i.gio_hu) : new Date();
-                    if (d < start || d > end) return false;
+                    // 1. Filter Date: Chỉ lọc nếu người dùng có nhập ngày
+                    if (startInput && endInput) {
+                        const d = i.gio_hu ? new Date(i.gio_hu) : new Date();
+                        const start = new Date(startInput);
+                        const end = new Date(endInput); end.setHours(23,59,59);
+                        if (d < start || d > end) return false;
+                    }
                     
                     // 2. Filter VSM
                     const itemVSM = vsmMap[i.chuyen] || "Khác";
