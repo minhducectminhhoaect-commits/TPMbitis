@@ -22,7 +22,6 @@
         .filter-group { display: flex; flex-direction: column; }
         .filter-group label { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: #444; }
         
-        /* Style cho Input và Select giống nhau */
         .filter-bar input, .filter-bar select { 
             padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; min-width: 150px;
         }
@@ -66,11 +65,11 @@
             </div>
 
             <div class="filter-group">
-                <label>Từ ngày:</label>
+                <label>Từ ngày (Máy hư):</label>
                 <input type="date" id="startDate">
             </div>
             <div class="filter-group">
-                <label>Đến ngày:</label>
+                <label>Đến ngày (Máy hư):</label>
                 <input type="date" id="endDate">
             </div>
             
@@ -81,7 +80,6 @@
         <div id="loadingMessage" style="text-align:center; padding:2rem;">Đang tải dữ liệu...</div>
 
         <div id="dashboardContent" style="display:none;">
-            
             <section class="summary-grid">
                 <div class="kpi-card">
                     <span class="value" id="kpi-total">0</span>
@@ -118,35 +116,18 @@
 
     <script>
         // ==========================================
-        // CẤU HÌNH: Dán URL Web App của bạn vào đây
+        // QUAN TRỌNG: DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
         // ==========================================
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykRkSxU2WAw_O4rFWY_HZXcE9UAjot1NXARgIIbaexOiFvxLLRncGu76G4czn54t-_/exec'; 
 
-        // === BẢN ĐỒ MAPPING VSM (Dựa trên ảnh bạn cung cấp) ===
         const vsmMapping = {
-            "Hoàn chỉnh 1": "VSM 1",
-            "Hoàn chỉnh 2": "VSM 2",
-            "May 1": "VSM 1",
-            "May 2": "VSM 1",
-            "May 3": "VSM 1",
-            "May 4": "VSM 1",
-            "May 5": "VSM 2",
-            "May 6": "VSM 2",
-            "Dập 1": "VSM 1",
-            "Dập 2": "VSM 2",
-            "In lụa": "VSM 1",
-            "Bế hình": "VSM 1",
-            "Cán dán": "VSM 1",
-            "Cắt trục": "VSM 1",
-            "Ép dấu chân": "VSM 2",
-            "Chuẩn bị đế": "VSM 2",
-            "Bọc đế": "VSM 2",
-            "Bán thành phẩm": "VSM 2",
-            "Cắt nhiệt": "VSM 1",
-            "Phát sinh": "Phát sinh"
+            "Hoàn chỉnh 1": "VSM 1", "Hoàn chỉnh 2": "VSM 2", "May 1": "VSM 1", "May 2": "VSM 1",
+            "May 3": "VSM 1", "May 4": "VSM 1", "May 5": "VSM 2", "May 6": "VSM 2",
+            "Dập 1": "VSM 1", "Dập 2": "VSM 2", "In lụa": "VSM 1", "Bế hình": "VSM 1",
+            "Cán dán": "VSM 1", "Cắt trục": "VSM 1", "Ép dấu chân": "VSM 2", "Chuẩn bị đế": "VSM 2",
+            "Bọc đế": "VSM 2", "Bán thành phẩm": "VSM 2", "Cắt nhiệt": "VSM 1", "Phát sinh": "Phát sinh"
         };
 
-        // Biến toàn cục
         let rawData = []; 
         let charts = {};  
 
@@ -164,12 +145,9 @@
                 .then(response => {
                     if (response.status === 'success') {
                         rawData = response.data;
-                        // Tiền xử lý: Gắn nhãn VSM cho từng dòng dữ liệu
                         rawData.forEach(item => {
-                            // Nếu chuyền có trong map thì lấy, không thì để "Khác"
                             item.vsmGroup = vsmMapping[item.chuyen] || "Khác";
                         });
-                        
                         applyFilter();
                         document.getElementById('loadingMessage').style.display = 'none';
                         document.getElementById('dashboardContent').style.display = 'block';
@@ -180,18 +158,28 @@
                 .catch(err => console.error("Lỗi fetch:", err));
         }
 
+        // === PHẦN LOGIC QUAN TRỌNG NHẤT ===
         function applyFilter() {
             const startStr = document.getElementById('startDate').value;
             const endStr = document.getElementById('endDate').value;
-            const selectedVSM = document.getElementById('vsmFilter').value; // Lấy giá trị VSM
+            const selectedVSM = document.getElementById('vsmFilter').value;
 
             const startDate = startStr ? new Date(startStr) : new Date('2000-01-01');
             const endDate = endStr ? new Date(endStr) : new Date();
             endDate.setHours(23, 59, 59); 
 
-            // LỌC MẢNG
             const filteredData = rawData.filter(item => {
-                const itemDate = new Date(item.timestamp);
+                // === THAY ĐỔI Ở ĐÂY: SỬ DỤNG 'thoi_diem_may_hu' ===
+                // Thay vì dùng item.timestamp (thời điểm nhập form)
+                // Ta dùng item.thoi_diem_may_hu (cột F trong Sheet)
+                
+                let itemDate;
+                if (item.thoi_diem_may_hu) {
+                     itemDate = new Date(item.thoi_diem_may_hu);
+                } else {
+                    // Dự phòng: Nếu không có thời điểm hư, dùng tạm timestamp
+                    itemDate = new Date(item.timestamp);
+                }
                 
                 // 1. Kiểm tra ngày
                 const matchDate = itemDate >= startDate && itemDate <= endDate;
@@ -207,32 +195,28 @@
 
             updateDashboard(filteredData);
         }
+        // ===================================
 
         function resetFilter() {
             document.getElementById('startDate').value = '';
             document.getElementById('endDate').value = '';
-            document.getElementById('vsmFilter').value = 'all'; // Reset về All
+            document.getElementById('vsmFilter').value = 'all';
             applyFilter();
         }
 
         function updateDashboard(data) {
-            // --- KPI ---
             document.getElementById('kpi-total').textContent = data.length;
             const estDowntime = (data.length * 1.5).toFixed(1); 
             const estMTTR = data.length > 0 ? (45 + Math.random()*5).toFixed(1) : 0;
             document.getElementById('kpi-downtime').textContent = estDowntime;
             document.getElementById('kpi-mttr').textContent = estMTTR;
 
-            // --- Dữ liệu biểu đồ ---
             const areaCounts = countByField(data, 'chuyen');
             const staffCounts = countByField(data, 'ten_bao_tri');
-            const vsmCounts = countByField(data, 'vsmGroup'); // Đếm theo VSM
+            const vsmCounts = countByField(data, 'vsmGroup'); 
 
-            // --- Vẽ ---
             drawChart('chartArea', 'bar', 'Số phiếu theo Chuyền', Object.keys(areaCounts), Object.values(areaCounts));
             drawChart('chartStaff', 'bar', 'Số phiếu xử lý', Object.keys(staffCounts), Object.values(staffCounts));
-            
-            // Vẽ biểu đồ tròn tỷ trọng VSM
             drawPieChart('chartVSM', Object.keys(vsmCounts), Object.values(vsmCounts));
         }
 
@@ -264,7 +248,6 @@
             });
         }
         
-        // Hàm riêng cho biểu đồ tròn (Pie Chart)
         function drawPieChart(canvasId, labels, dataValues) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             if (charts[canvasId]) charts[canvasId].destroy();
@@ -274,11 +257,7 @@
                     labels: labels,
                     datasets: [{
                         data: dataValues,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)'
-                        ],
+                        backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)'],
                     }]
                 },
                 options: { responsive: true }
