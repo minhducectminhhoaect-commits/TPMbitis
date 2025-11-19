@@ -12,7 +12,7 @@
         
         .dashboard-container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
         
-        /* --- THANH CÔNG CỤ LỌC --- */
+        /* Filter Bar */
         .filter-bar {
             background-color: white; padding: 1.5rem; border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -21,26 +21,21 @@
         }
         .filter-group { display: flex; flex-direction: column; }
         .filter-group label { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: #444; }
-        
-        .filter-bar input, .filter-bar select { 
-            padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; min-width: 150px;
-        }
-        
-        .btn-filter {
-            background-color: #007bff; color: white; border: none; padding: 0.7rem 1.5rem;
-            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem;
-        }
+        .filter-bar input, .filter-bar select { padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; min-width: 150px; }
+        .btn-filter { background-color: #007bff; color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; }
         .btn-filter:hover { background-color: #0056b3; }
 
-        /* KPI Cards */
+        /* KPI */
         .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .kpi-card { background-color: #ffffff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); text-align: center; }
         .kpi-card .value { font-size: 2.5rem; font-weight: 700; color: #007bff; display: block; }
         
-        /* Charts */
+        /* Charts Grid */
         .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
         .chart-card { background-color: #ffffff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
         
+        h3 { text-align: center; color: #333; margin-top: 0; font-size: 1.1rem; }
+
         @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -58,12 +53,11 @@
             <div class="filter-group">
                 <label>Chọn VSM:</label>
                 <select id="vsmFilter">
-                    <option value="all">Tất cả (VSM 1 & 2)</option>
+                    <option value="all">Tất cả</option>
                     <option value="VSM 1">VSM 1</option>
                     <option value="VSM 2">VSM 2</option>
                 </select>
             </div>
-
             <div class="filter-group">
                 <label>Từ ngày (Máy hư):</label>
                 <input type="date" id="startDate">
@@ -72,7 +66,6 @@
                 <label>Đến ngày (Máy hư):</label>
                 <input type="date" id="endDate">
             </div>
-            
             <button class="btn-filter" onclick="applyFilter()">Lọc Dữ Liệu</button>
             <button class="btn-filter" style="background-color:#6c757d;" onclick="resetFilter()">Reset</button>
         </div>
@@ -80,32 +73,43 @@
         <div id="loadingMessage" style="text-align:center; padding:2rem;">Đang tải dữ liệu...</div>
 
         <div id="dashboardContent" style="display:none;">
+            
             <section class="summary-grid">
                 <div class="kpi-card">
                     <span class="value" id="kpi-total">0</span>
                     <span>Tổng số phiếu</span>
                 </div>
                 <div class="kpi-card">
-                    <span class="value" id="kpi-downtime">--</span>
-                    <span>Downtime (h)</span>
+                    <span class="value" id="kpi-downtime">0</span>
+                    <span>Tổng Downtime (Giờ)</span>
                 </div>
                 <div class="kpi-card">
-                    <span class="value" id="kpi-mttr">--</span>
-                    <span>MTTR (p)</span>
+                    <span class="value" id="kpi-mttr">0</span>
+                    <span>MTTR Trung bình (Phút)</span>
                 </div>
             </section>
 
             <section class="charts-grid">
                 <div class="chart-card">
-                    <h3 style="text-align:center">Số phiếu theo Chuyền</h3>
-                    <canvas id="chartArea"></canvas>
+                    <h3>Số phiếu theo Chuyền</h3>
+                    <canvas id="chartTicketByLine"></canvas>
                 </div>
                 <div class="chart-card">
-                    <h3 style="text-align:center">Top Nhân viên xử lý</h3>
-                    <canvas id="chartStaff"></canvas>
+                    <h3 style="color:#d9534f">Tổng Downtime theo Chuyền (Giờ)</h3>
+                    <canvas id="chartDowntimeByLine"></canvas>
                 </div>
+
+                <div class="chart-card">
+                    <h3>Số phiếu theo Nhân viên</h3>
+                    <canvas id="chartTicketByStaff"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3 style="color:#f0ad4e">MTTR theo Nhân viên (Phút)</h3>
+                    <canvas id="chartMTTRByStaff"></canvas>
+                </div>
+
                 <div class="chart-card" style="grid-column: span 2;">
-                    <h3 style="text-align:center">Tỷ trọng VSM</h3>
+                    <h3>Tỷ trọng VSM</h3>
                     <div style="max-width: 400px; margin: 0 auto;">
                          <canvas id="chartVSM"></canvas>
                     </div>
@@ -116,7 +120,7 @@
 
     <script>
         // ==========================================
-        // QUAN TRỌNG: DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
+        // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
         // ==========================================
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykRkSxU2WAw_O4rFWY_HZXcE9UAjot1NXARgIIbaexOiFvxLLRncGu76G4czn54t-_/exec'; 
 
@@ -147,7 +151,19 @@
                         rawData = response.data;
                         rawData.forEach(item => {
                             item.vsmGroup = vsmMapping[item.chuyen] || "Khác";
+                            
+                            // === TÍNH TOÁN THỜI GIAN DỪNG MÁY CHO TỪNG PHIẾU (Giờ) ===
+                            item.downtimeHours = 0;
+                            if (item.thoi_diem_may_hu && item.thoi_diem_hoan_tat_sua_chua) {
+                                const start = new Date(item.thoi_diem_may_hu);
+                                const end = new Date(item.thoi_diem_hoan_tat_sua_chua);
+                                const diffMs = end - start;
+                                if (diffMs > 0) {
+                                    item.downtimeHours = diffMs / (1000 * 60 * 60); // Đổi ra giờ
+                                }
+                            }
                         });
+                        
                         applyFilter();
                         document.getElementById('loadingMessage').style.display = 'none';
                         document.getElementById('dashboardContent').style.display = 'block';
@@ -158,7 +174,6 @@
                 .catch(err => console.error("Lỗi fetch:", err));
         }
 
-        // === PHẦN LOGIC QUAN TRỌNG NHẤT ===
         function applyFilter() {
             const startStr = document.getElementById('startDate').value;
             const endStr = document.getElementById('endDate').value;
@@ -169,33 +184,18 @@
             endDate.setHours(23, 59, 59); 
 
             const filteredData = rawData.filter(item => {
-                // === THAY ĐỔI Ở ĐÂY: SỬ DỤNG 'thoi_diem_may_hu' ===
-                // Thay vì dùng item.timestamp (thời điểm nhập form)
-                // Ta dùng item.thoi_diem_may_hu (cột F trong Sheet)
-                
-                let itemDate;
-                if (item.thoi_diem_may_hu) {
-                     itemDate = new Date(item.thoi_diem_may_hu);
-                } else {
-                    // Dự phòng: Nếu không có thời điểm hư, dùng tạm timestamp
-                    itemDate = new Date(item.timestamp);
-                }
-                
-                // 1. Kiểm tra ngày
+                // Sử dụng thời điểm máy hư để lọc
+                const itemDate = item.thoi_diem_may_hu ? new Date(item.thoi_diem_may_hu) : new Date(item.timestamp);
                 const matchDate = itemDate >= startDate && itemDate <= endDate;
                 
-                // 2. Kiểm tra VSM
                 let matchVSM = true;
-                if (selectedVSM !== 'all') {
-                    matchVSM = item.vsmGroup === selectedVSM;
-                }
+                if (selectedVSM !== 'all') matchVSM = item.vsmGroup === selectedVSM;
 
                 return matchDate && matchVSM;
             });
 
             updateDashboard(filteredData);
         }
-        // ===================================
 
         function resetFilter() {
             document.getElementById('startDate').value = '';
@@ -204,32 +204,67 @@
             applyFilter();
         }
 
+        // === LOGIC TÍNH TOÁN MỚI ===
         function updateDashboard(data) {
+            // 1. Tính Tổng Downtime (Toàn bộ dữ liệu lọc)
+            const totalDowntime = data.reduce((sum, item) => sum + item.downtimeHours, 0);
+            
+            // 2. Tính MTTR (Tổng Downtime phút / Số phiếu có downtime > 0)
+            const validTickets = data.filter(i => i.downtimeHours > 0).length;
+            const avgMTTRMinutes = validTickets > 0 ? ((totalDowntime * 60) / validTickets) : 0;
+
+            // Cập nhật KPI
             document.getElementById('kpi-total').textContent = data.length;
-            const estDowntime = (data.length * 1.5).toFixed(1); 
-            const estMTTR = data.length > 0 ? (45 + Math.random()*5).toFixed(1) : 0;
-            document.getElementById('kpi-downtime').textContent = estDowntime;
-            document.getElementById('kpi-mttr').textContent = estMTTR;
+            document.getElementById('kpi-downtime').textContent = totalDowntime.toFixed(1);
+            document.getElementById('kpi-mttr').textContent = avgMTTRMinutes.toFixed(1);
 
-            const areaCounts = countByField(data, 'chuyen');
-            const staffCounts = countByField(data, 'ten_bao_tri');
-            const vsmCounts = countByField(data, 'vsmGroup'); 
+            // 3. Chuẩn bị dữ liệu cho biểu đồ
+            const statsByLine = {};
+            const statsByStaff = {};
+            const vsmCounts = {};
 
-            drawChart('chartArea', 'bar', 'Số phiếu theo Chuyền', Object.keys(areaCounts), Object.values(areaCounts));
-            drawChart('chartStaff', 'bar', 'Số phiếu xử lý', Object.keys(staffCounts), Object.values(staffCounts));
+            data.forEach(item => {
+                const line = item.chuyen || "Khác";
+                const staff = item.ten_bao_tri || "Khác";
+                const vsm = item.vsmGroup || "Khác";
+
+                // Thống kê theo Chuyền
+                if (!statsByLine[line]) statsByLine[line] = { tickets: 0, downtime: 0 };
+                statsByLine[line].tickets += 1;
+                statsByLine[line].downtime += item.downtimeHours;
+
+                // Thống kê theo Nhân viên
+                if (!statsByStaff[staff]) statsByStaff[staff] = { tickets: 0, downtime: 0 };
+                statsByStaff[staff].tickets += 1;
+                statsByStaff[staff].downtime += item.downtimeHours;
+                
+                // Thống kê VSM
+                vsmCounts[vsm] = (vsmCounts[vsm] || 0) + 1;
+            });
+
+            // 4. Tách mảng để vẽ
+            // - Số phiếu theo chuyền
+            drawChart('chartTicketByLine', 'bar', 'Số phiếu', Object.keys(statsByLine), Object.values(statsByLine).map(x => x.tickets), '#36a2eb');
+            
+            // - Downtime theo chuyền (MỚI)
+            drawChart('chartDowntimeByLine', 'bar', 'Giờ dừng máy', Object.keys(statsByLine), Object.values(statsByLine).map(x => x.downtime.toFixed(1)), '#d9534f');
+
+            // - Số phiếu theo nhân viên
+            drawChart('chartTicketByStaff', 'bar', 'Số phiếu', Object.keys(statsByStaff), Object.values(statsByStaff).map(x => x.tickets), '#36a2eb');
+
+            // - MTTR theo nhân viên (MỚI) - Tính bằng PHÚT
+            const staffNames = Object.keys(statsByStaff);
+            const staffMTTR = Object.values(statsByStaff).map(x => {
+                return x.tickets > 0 ? ((x.downtime * 60) / x.tickets).toFixed(1) : 0;
+            });
+            drawChart('chartMTTRByStaff', 'bar', 'MTTR (Phút)', staffNames, staffMTTR, '#f0ad4e');
+
+            // - Tỷ trọng VSM
             drawPieChart('chartVSM', Object.keys(vsmCounts), Object.values(vsmCounts));
         }
 
-        function countByField(data, fieldName) {
-            const counts = {};
-            data.forEach(item => {
-                const key = item[fieldName] || "Chưa xác định";
-                counts[key] = (counts[key] || 0) + 1;
-            });
-            return counts;
-        }
-
-        function drawChart(canvasId, type, label, labels, dataValues) {
+        // Hàm vẽ biểu đồ cột (Cập nhật để nhận màu sắc tùy chỉnh)
+        function drawChart(canvasId, type, label, labels, dataValues, color) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             if (charts[canvasId]) charts[canvasId].destroy();
             charts[canvasId] = new Chart(ctx, {
@@ -239,8 +274,8 @@
                     datasets: [{
                         label: label,
                         data: dataValues,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: color || 'rgba(54, 162, 235, 0.6)',
+                        borderColor: color || 'rgba(54, 162, 235, 1)',
                         borderWidth: 1
                     }]
                 },
@@ -257,7 +292,7 @@
                     labels: labels,
                     datasets: [{
                         data: dataValues,
-                        backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)'],
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
                     }]
                 },
                 options: { responsive: true }
