@@ -14,28 +14,30 @@
         button.secondary { background: #6c757d; }
         button.logout { background: transparent; color: #dc3545; border: 1px solid #dc3545; margin-top: 10px; }
         
-        /* UI Elements */
+        /* Header & Badge */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .role-badge { background: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         
-        /* ALERT BOX (Quan trọng cho thông báo) */
+        /* ALERT BOX - Nhấp nháy */
         .alert-box { 
             background: #ffebee; border: 2px solid #d32f2f; padding: 15px; 
             border-radius: 8px; margin-bottom: 15px; color: #c62828; 
-            animation: pulse 2s infinite; /* Hiệu ứng nhấp nháy */
+            animation: pulse 1s infinite; 
         }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); } }
 
-        /* Ticket List */
+        /* Tickets */
         .ticket-item { border-left: 5px solid #ccc; padding: 12px; background: #fff; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; }
         .ticket-item.open { border-left-color: #dc3545; } .ticket-item.assigned { border-left-color: #ffc107; } .ticket-item.done { border-left-color: #28a745; }
         .status-tag { position: absolute; top: 12px; right: 12px; font-size: 11px; padding: 2px 6px; border-radius: 4px; color: white; font-weight: bold; }
         .tag-open { background: #dc3545; } .tag-assigned { background: #ffc107; color: #333; } .tag-done { background: #28a745; }
         
-        /* Modal & Others */
+        /* Modal Details */
         .detail-row { display: flex; border-bottom: 1px solid #eee; padding: 8px 0; }
         .detail-label { flex: 1; font-weight: bold; color: #555; font-size: 14px; }
         .detail-val { flex: 2; font-size: 14px; text-align: right; }
+
+        /* Dashboard */
         .filter-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
         .filter-group > * { flex: 1; min-width: 120px; }
         .kpi-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
@@ -93,15 +95,7 @@
 
     <div id="screen-tech" class="hidden">
         <div class="header"><div>Hi, <b class="u-name"></b></div> <div class="role-badge">BẢO TRÌ</div></div>
-        
-        <div id="tech-alert-area" class="hidden">
-            <div class="alert-box">
-                <strong>🔔 CÓ MÁY HƯ MỚI!</strong>
-                <p style="margin:5px 0; font-size:13px">Vui lòng kiểm tra các chuyền:</p>
-                <div id="tech-alert-list"></div>
-            </div>
-        </div>
-
+        <div id="tech-alert-area" class="hidden"><div class="alert-box"><strong>🔔 CÓ MÁY HƯ MỚI!</strong><div id="tech-alert-list"></div></div></div>
         <div class="card"><h3>Việc Của Tôi (<span id="count-myjob">0</span>)</h3><div id="t-list"></div><button class="secondary" onclick="loadTechJobs()">Làm mới</button></div>
         <div class="card"><h3>Tiện Ích</h3><button class="secondary" onclick="openHistoryModal()">Xem Lịch Sử Đã Làm</button><button style="background:#17a2b8; margin-top:5px" onclick="showDashboard(true)">Xem Dashboard</button></div>
         <button class="logout" onclick="doLogout()">Đăng Xuất</button>
@@ -115,44 +109,40 @@
     <div id="screen-dashboard" class="hidden"><div class="header"><h3>Dashboard TPM</h3><button class="secondary" style="width:auto; padding:5px 15px;" onclick="goBack()">Quay Lại</button></div><div class="card"><div class="filter-group"><select id="d-vsm"><option value="all">Tất cả VSM</option><option value="VSM 1">VSM 1</option><option value="VSM 2">VSM 2</option></select><select id="d-line"><option value="all">Tất cả Chuyền</option><option value="May 1">May 1</option><option value="May 2">May 2</option><option value="May 3">May 3</option><option value="May 4">May 4</option><option value="May 5">May 5</option><option value="May 6">May 6</option><option value="Hoàn chỉnh 1">Hoàn chỉnh 1</option><option value="Hoàn chỉnh 2">Hoàn chỉnh 2</option></select></div><div class="filter-group"><input type="date" id="d-start" title="Từ ngày"><input type="date" id="d-end" title="Đến ngày"></div><div class="filter-group"><button onclick="loadDashboardData()">Lọc Dữ Liệu</button><button class="secondary" onclick="resetFilters()">Reset (Xem Tất Cả)</button></div></div><div class="kpi-grid"><div class="kpi-box"><span class="kpi-num" id="kpi-total">0</span><span class="kpi-label">Tổng Phiếu</span></div><div class="kpi-box"><span class="kpi-num" id="kpi-dt">0</span><span class="kpi-label">Downtime (h)</span></div><div class="kpi-box"><span class="kpi-num" id="kpi-mttr">0</span><span class="kpi-label">MTTR (phút)</span></div></div><div class="chart-container"><canvas id="c-line-ticket"></canvas></div><div class="chart-container"><canvas id="c-line-dt"></canvas></div><div class="chart-container"><canvas id="c-tech-ticket"></canvas></div><div class="chart-container"><canvas id="c-tech-mttr"></canvas></div></div>
 
     <script>
-        // =================================================================
-        // QUAN TRỌNG: DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
+        // ==============================================
+        // DÁN URL WEB APP CỦA BẠN VÀO ĐÂY
         const API_URL = 'https://script.google.com/macros/s/AKfycbykRkSxU2WAw_O4rFWY_HZXcE9UAjot1NXARgIIbaexOiFvxLLRncGu76G4czn54t-_/exec'; 
-        // =================================================================
+        // ==============================================
 
         let currentUser = null;
         let refreshInterval = null;
-        let lastAlertCount = 0;
         
-        // Âm thanh thông báo (tiếng chuông nhẹ)
+        // Âm thanh thông báo
         const beepSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
-
         const vsmMap = {"Hoàn chỉnh 1": "VSM 1", "Hoàn chỉnh 2": "VSM 2", "May 1": "VSM 1", "May 2": "VSM 1", "May 3": "VSM 1", "May 4": "VSM 1", "May 5": "VSM 2", "May 6": "VSM 2", "Dập 1": "VSM 1", "Dập 2": "VSM 2", "In lụa": "VSM 1", "Bế hình": "VSM 1", "Cán dán": "VSM 1", "Cắt trục": "VSM 1", "Ép dấu chân": "VSM 2", "Chuẩn bị đế": "VSM 2", "Bọc đế": "VSM 2", "Bán thành phẩm": "VSM 2", "Cắt nhiệt": "VSM 1", "Phát sinh": "Phát sinh"};
 
         document.addEventListener('DOMContentLoaded', () => { checkAutoLogin(); });
 
         function post(data, cb) { 
-            if(API_URL.includes('YOUR_WEB_APP_URL')) { alert("Lỗi: Chưa cập nhật link API_URL trong code!"); return; }
+            if(API_URL.includes('YOUR_WEB_APP_URL')) { alert("Vui lòng cập nhật API_URL trong file index.html"); return; }
             fetch(API_URL, {method:'POST', body:JSON.stringify(data)}).then(r=>r.json())
             .then(res => { if(res.status === 'error') alert(res.message); else cb(res); })
-            .catch(e=>alert('Lỗi kết nối. Kiểm tra mạng hoặc URL.'));
+            .catch(e=>alert('Lỗi kết nối: '+e));
         }
         
-        // Helper: Lấy giờ hiện tại format chuẩn
         function setNow(id) { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); document.getElementById(id).value = now.toISOString().slice(0,16); }
         
         // Helper: Rung chuông và thông báo
         function notifyUser() {
             try {
-                beepSound.play().catch(e=>{}); // Phát tiếng (cần tương tác trước đó)
-                if(navigator.vibrate) navigator.vibrate([500, 300, 500]); // Rung (Chỉ Android)
+                beepSound.play().catch(e=>{}); 
+                if(navigator.vibrate) navigator.vibrate([500, 300, 500]); 
             } catch(e){}
         }
 
         function showScreen(id) { document.querySelectorAll('body > div[id^="screen-"]').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
         function goBack() { if (!currentUser) showScreen('screen-login'); else if (currentUser.role === 'leader') showScreen('screen-leader'); else showScreen('screen-tech'); }
 
-        // --- AUTH & SESSION ---
         function checkAutoLogin() { const s = localStorage.getItem('tpm_user'); if (s) { currentUser = JSON.parse(s); restoreSession(); } }
         function restoreSession() {
             document.querySelectorAll('.u-name').forEach(el => el.innerText = currentUser.fullname);
@@ -170,7 +160,7 @@
         }
         function doLogout() { if(refreshInterval) clearInterval(refreshInterval); localStorage.removeItem('tpm_user'); location.reload(); }
 
-        // --- LEADER LOGIC ---
+        // LEADER
         function switchLeaderTab(n) {
             document.getElementById('l-tab-1').classList.toggle('hidden', n!==1);
             document.getElementById('l-tab-2').classList.toggle('hidden', n!==2);
@@ -187,7 +177,7 @@
             const div = document.getElementById('l-list'); div.innerHTML = 'Đang tải...';
             post({action:'leader_get_open'}, res => {
                 div.innerHTML = ''; document.getElementById('count-open').innerText = res.data.length;
-                res.data.forEach(i => div.innerHTML += `<div class="ticket-item open"><h4>${i.chuyen} - ${i.ma_so}</h4><p>Hư: ${new Date(i.gio_hu).toLocaleString()}</p><button onclick='openAssign(${JSON.stringify(i)})'>Bảo Trì Đến</button></div>`);
+                res.data.forEach(i => div.innerHTML += `<div class="ticket-item open"><h4>${i.chuyen} - ${i.ma_so}</h4><p>Hư lúc: ${new Date(i.gio_hu).toLocaleString()}</p><button onclick='openAssign(${JSON.stringify(i)})'>Bảo Trì Đến</button></div>`);
             });
         }
         function openAssign(i) { 
@@ -203,9 +193,8 @@
             });
         }
 
-        // --- TECH LOGIC ---
+        // TECH
         function startAutoRefresh() { 
-            // Quét mỗi 15 giây để tìm phiếu mới
             refreshInterval = setInterval(() => { if(!document.getElementById('screen-tech').classList.contains('hidden')) loadTechJobs(true); }, 15000); 
         }
         function loadTechJobs(silent) {
@@ -214,18 +203,19 @@
                 const divAlert = document.getElementById('tech-alert-list'); divAlert.innerHTML = '';
                 const curAlert = res.data.alertJobs.length;
                 
-                // Nếu có phiếu Open (Cảnh báo)
+                // XỬ LÝ CẢNH BÁO + RUNG
                 if(curAlert > 0) { 
                     document.getElementById('tech-alert-area').classList.remove('hidden'); 
-                    res.data.alertJobs.forEach(i => divAlert.innerHTML += `<div style="border-bottom:1px dashed #ccc; padding:5px;"><b>${i.chuyen}</b>: ${i.ma_so} (Hư lúc ${i.gio_hu.substring(11,16)})</div>`); 
-                    
-                    // Nếu số lượng phiếu alert tăng lên -> RUNG + KÊU
-                    if(silent && curAlert > lastAlertCount) notifyUser();
+                    res.data.alertJobs.forEach(i => {
+                        const timeStr = new Date(i.gio_hu).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+                        divAlert.innerHTML += `<div style="border-bottom:1px dashed #ccc; padding:5px;"><b>${i.chuyen}</b>: ${i.ma_so} <br/><span style="font-size:12px; color:#d32f2f">⏰ Hư lúc: ${timeStr}</span></div>`;
+                    });
+                    // Nếu chạy ngầm (silent) mà vẫn còn phiếu cảnh báo -> Rung & Kêu tiếp
+                    if(silent) notifyUser();
                 } else {
                     document.getElementById('tech-alert-area').classList.add('hidden');
                 }
-                lastAlertCount = curAlert; // Cập nhật số lượng
-
+                
                 divMy.innerHTML = ''; document.getElementById('count-myjob').innerText = res.data.myJobs.length;
                 if(res.data.myJobs.length === 0 && !silent) divMy.innerHTML = 'Chưa có việc.';
                 else res.data.myJobs.forEach(i => divMy.innerHTML += `<div class="ticket-item assigned"><h4>${i.chuyen} - ${i.ma_so}</h4><p>Chờ sửa</p><button style="background:#28a745" onclick='openFinish(${JSON.stringify(i)})'>Hoàn Tất</button></div>`);
@@ -242,7 +232,7 @@
             post({action:'tech_finish', id:document.getElementById('f-id').value, rowIndex:document.getElementById('f-row').value, data:d}, res => { alert(res.message); document.getElementById('modal-finish').classList.add('hidden'); loadTechJobs(); });
         }
 
-        // --- HISTORY & DASHBOARD ---
+        // HISTORY & DASHBOARD
         function openHistoryModal() { document.getElementById('modal-history').classList.remove('hidden'); loadHistory('common-history-list'); }
         function loadHistory(targetId) {
             const div = document.getElementById(targetId); div.innerHTML = 'Đang tải...';
